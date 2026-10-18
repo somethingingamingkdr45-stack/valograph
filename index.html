@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VALOGRAPH // FalkorDB 3D Game Graph</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --c: #00f0ff;
+  --g: #00ff88;
+  --r: #ff2a54;
+  --a: #fbbf24;
+  --p: #a855f7;
+  --bg: #04060b;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: #e2e8f0;
+  font: 600 14px 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+  background: repeating-linear-gradient(transparent 0 2px, rgba(0,0,0,0.12) 2px 3px);
+}
+#c { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; }
+.brand, .hero h2, #boot h1, h4, .pcard h3, .dock-btn { font-family: 'Orbitron', sans-serif; }
+
+/* =====================================================================
+   CYBER-GRID BOOT SCREEN ("VALOGRAPH")
+   ===================================================================== */
+#boot {
+  position: fixed; inset: 0; z-index: 99;
+  background: radial-gradient(circle at 50% 40%, #0b1d36, #04060b 72%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; cursor: pointer; overflow: hidden;
+}
+#boot::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(rgba(0, 240, 255, 0.08) 1px, transparent 1px) 0 0 / 100% 40px,
+    linear-gradient(90deg, rgba(0, 240, 255, 0.08) 1px, transparent 1px) 0 0 / 40px 100%;
+  animation: gd 8s linear infinite;
+}
+@keyframes gd { to { background-position: 0 400px, 400px 0; } }
+#boot > * { position: relative; z-index: 1; }
+#boot h1 {
+  font-size: 56px; font-weight: 900; letter-spacing: 10px; margin: 0;
+  color: #fff; text-shadow: 3px 0 var(--r), -3px 0 var(--c);
+}
+#bl {
+  color: var(--g); font: 12.5px Consolas, monospace; text-align: left;
+  min-height: 82px; margin: 0; background: rgba(4, 7, 13, 0.88);
+  padding: 12px 20px; border-radius: 8px; border: 1px solid #18304c;
+  box-shadow: 0 0 24px rgba(0, 255, 136, 0.14);
+}
+#boot .enter-btn {
+  background: var(--g); color: #000; border: none; padding: 10px 30px;
+  border-radius: 7px; font: 900 13px 'Orbitron', sans-serif; letter-spacing: 2px;
+  cursor: pointer; box-shadow: 0 0 22px rgba(0, 255, 136, 0.5); transition: 0.2s;
+}
+
+/* HEADER & NAV DOCK */
+header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 35;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 20px;
+  background: linear-gradient(180deg, rgba(4,6,11,0.95), rgba(4,6,11,0.45));
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0,240,255,0.2);
+}
+.brand {
+  font-weight: 900; letter-spacing: 5px; font-size: 22px; color: #fff;
+  text-shadow: 2px 0 var(--r), -2px 0 var(--c); cursor: pointer;
+}
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn {
+  background: rgba(11, 20, 38, 0.88); color: var(--c);
+  border: 1px solid var(--c); padding: 6px 13px; border-radius: 6px;
+  font: 700 12px 'Rajdhani', sans-serif; letter-spacing: 0.8px;
+  cursor: pointer; transition: 0.16s;
+}
+.btn:hover, .btn.on { background: var(--c); color: #000; box-shadow: 0 0 16px rgba(0,240,255,0.55); }
+.btn.g { background: var(--g); border-color: var(--g); color: #000; font-weight: 800; }
+.badge { font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 99px; border: 1px solid; }
+
+nav {
+  position: fixed; top: 52px; left: 0; right: 0; z-index: 34;
+  display: flex; justify-content: center; padding: 4px; pointer-events: none;
+}
+.dock {
+  pointer-events: auto; display: flex; gap: 6px;
+  background: rgba(6, 10, 19, 0.9); border: 1px solid #1e3558;
+  padding: 5px 8px; border-radius: 10px; backdrop-filter: blur(12px);
+}
+.dock-btn {
+  background: rgba(13, 22, 39, 0.9); color: #94a3b8;
+  border: 1px solid #1e2f4d; padding: 7px 16px; border-radius: 7px;
+  font-size: 11px; font-weight: 800; letter-spacing: 1.2px; cursor: pointer; transition: 0.16s;
+}
+.dock-btn:hover { color: #fff; border-color: var(--c); }
+.dock-btn.on {
+  background: linear-gradient(90deg, var(--c), #38bdf8);
+  color: #000; border-color: var(--c); box-shadow: 0 0 16px rgba(0,240,255,0.45);
+}
+
+/* GLASS PANELS */
+.glass {
+  background: rgba(8, 13, 24, 0.86);
+  backdrop-filter: blur(16px);
+  border: 1px solid #1d3050;
+  border-radius: 14px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.65);
+  position: relative;
+}
+.glass::before {
+  content: ''; position: absolute; inset: -1px; border-radius: 14px; padding: 1px;
+  background: linear-gradient(135deg, rgba(0,240,255,0.6), transparent 40%, transparent 60%, rgba(255,42,84,0.6));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+}
+
+.view { position: fixed; top: 96px; bottom: 30px; left: 0; right: 0; z-index: 10; display: none; padding: 0 14px; }
+.view.on { display: block; }
+
+/* =====================================================================
+   3D HOLOGRAPHIC HTML NODE OVERLAY (REPLACES ALL SPHERES/CIRCLES!)
+   ===================================================================== */
+#nodeLayer {
+  position: fixed; inset: 0; z-index: 5; pointer-events: none; overflow: hidden;
+}
+.gnode {
+  position: absolute; left: 0; top: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: auto; cursor: pointer;
+  transition: box-shadow 0.15s ease;
+}
+/* 1. AGENT / PLAYER NODE CARD */
+.gn-agent {
+  display: flex; flex-direction: column; align-items: center;
+}
+.gn-agent .av-ring {
+  width: 78px; height: 78px; border-radius: 16px; overflow: hidden;
+  border: 2px solid var(--nc, #00f0ff);
+  background: radial-gradient(circle, color-mix(in srgb, var(--nc, #00f0ff) 35%, #060a14), #04070e);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--nc, #00f0ff) 55%, transparent);
+}
+.gn-agent.root .av-ring { width: 96px; height: 96px; border-width: 3px; }
+.gn-agent .av-ring img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gn-label {
+  margin-top: 5px; background: rgba(4, 7, 14, 0.92);
+  border: 1px solid var(--nc, #00f0ff); color: #fff;
+  padding: 3px 10px; border-radius: 6px; font-weight: 800; font-size: 12px;
+  white-space: nowrap; text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.7);
+}
+
+/* 2. WEAPON NODE CARD (SHOWS REAL GUN IMAGE!) */
+.gn-weapon {
+  background: rgba(6, 11, 22, 0.92);
+  border: 1.5px solid var(--a); border-radius: 10px;
+  padding: 6px 12px; text-align: center; min-width: 135px;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+}
+.gn-weapon:hover { transform: translate(-50%, -50%) scale(1.08); border-color: #fff; }
+.gn-weapon img { height: 42px; max-width: 125px; object-fit: contain; display: block; margin: 0 auto 3px; filter: drop-shadow(0 0 8px rgba(251,191,36,0.4)); }
+.gn-weapon b { color: var(--a); font-size: 12.5px; display: block; }
+
+/* 3. MAP / MATCH NODE CARD (SHOWS REAL MAP IMAGE + BIG MATCH SCORE!) */
+.gn-map {
+  width: 158px; border-radius: 10px; overflow: hidden;
+  background: #060b16; border: 2px solid var(--nc, var(--p));
+  box-shadow: 0 0 22px color-mix(in srgb, var(--nc, var(--p)) 45%, transparent);
+}
+.gn-map:hover { transform: translate(-50%, -50%) scale(1.08); border-color: #fff; }
+.gn-map img { width: 100%; height: 64px; object-fit: cover; display: block; filter: brightness(0.85); }
+.gn-map .m-info { padding: 5px 8px; text-align: center; background: rgba(4, 7, 14, 0.95); }
+.gn-map .m-name { font-family: 'Orbitron', sans-serif; font-size: 11.5px; font-weight: 900; color: #fff; }
+.gn-map .m-score { font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 900; color: var(--nc, var(--g)); margin-top: 2px; letter-spacing: 0.5px; }
+
+/* 4. SKILL C / Q / E / X VIDEO NODE CARD (PLAYS ACTUAL VIDEO RIGHT ON THE GRAPH!) */
+.gn-skill {
+  width: 175px; border-radius: 10px; overflow: hidden;
+  background: #050912; border: 2px solid var(--c);
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.38);
+}
+.gn-skill:hover { transform: translate(-50%, -50%) scale(1.08); border-color: var(--g); z-index: 20; }
+.gn-skill video { width: 100%; height: 92px; object-fit: cover; display: block; background: #000; }
+.gn-skill .s-bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 8px; background: rgba(4, 8, 16, 0.96);
+}
+.gn-skill .s-bar img { width: 20px; height: 20px; object-fit: contain; }
+.gn-skill .s-key { color: var(--a); font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 12px; }
+.gn-skill .s-name { color: #fff; font-weight: 800; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* =====================================================================
+   MENU PORTAL CARDS (#v_MENU)
+   ===================================================================== */
+.menu-wrap {
+  max-width: 1320px; margin: 0 auto; height: 100%;
+  display: flex; flex-direction: column; justify-content: center; gap: 16px;
+}
+.pgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+@media (max-width: 1050px) { .pgrid { grid-template-columns: repeat(2, 1fr); } }
+.pcard {
+  height: 390px; border-radius: 16px; overflow: hidden; position: relative;
+  cursor: pointer; border: 1.5px solid var(--pc, var(--c));
+  background: #060a14;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  display: flex; flex-direction: column; justify-content: space-between;
+  box-shadow: 0 12px 34px rgba(0,0,0,0.8);
+}
+.pcard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 42px color-mix(in srgb, var(--pc, var(--c)) 45%, transparent);
+}
+.pcard .map-bg {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: 0.28; transition: transform 0.35s ease;
+}
+.pcard:hover .map-bg { transform: scale(1.08); opacity: 0.38; }
+.pcard .glow-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--pc, var(--c)) 42%, transparent), rgba(4,6,11,0.96) 78%);
+}
+.pcard img.bg-art {
+  position: absolute; left: 50%; bottom: 52px; transform: translateX(-50%);
+  height: 78%; width: 94%; object-fit: contain; object-position: center bottom;
+  filter: drop-shadow(0 8px 22px var(--pc, var(--c)));
+  transition: transform 0.25s ease; pointer-events: none; z-index: 2;
+}
+.pcard:hover img.bg-art { transform: translateX(-50%) scale(1.07) translateY(-4px); }
+.pcard .p-top {
+  position: relative; z-index: 3; padding: 14px 16px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.pcard .p-badge {
+  background: rgba(4, 7, 14, 0.9); border: 1px solid var(--pc, var(--c));
+  color: var(--pc, var(--c)); font-size: 10.5px; font-weight: 800;
+  padding: 3px 10px; border-radius: 99px; letter-spacing: 1px;
+}
+.pcard .p-overlay {
+  position: relative; z-index: 3;
+  background: linear-gradient(180deg, transparent, rgba(4,6,11,0.96) 28%, #04060b 100%);
+  padding: 36px 18px 16px;
+}
+.pcard h3 { margin: 2px 0 4px; font-size: 19px; color: #fff; letter-spacing: 1.5px; }
+.pcard span.kicker { font-size: 11px; color: var(--pc, var(--c)); font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
+.pcard p { margin: 0; font-size: 12px; color: #94a3b8; }
+
+/* LIVE 3D GRAPH PANELS (#v_GRAPH) */
+#v_GRAPH { pointer-events: none; }
+#v_GRAPH .glass { pointer-events: auto; position: absolute; top: 0; max-height: 100%; overflow: auto; padding: 12px; }
+#lob { left: 14px; width: 325px; }
+#ins { right: 14px; width: 430px; }
+
+/* BIG SCOREBOARD IN LEFT TEAM PANEL */
+.live-score-banner {
+  background: linear-gradient(90deg, rgba(0,240,255,0.14), rgba(255,42,84,0.14));
+  border: 1px solid #243b5e; border-radius: 10px; padding: 8px 12px;
+  margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+}
+.live-score-banner .sb-map { font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 900; color: #fff; }
+.live-score-banner .sb-phase { font-size: 10.5px; color: var(--c); text-transform: uppercase; font-weight: 800; }
+.live-score-banner .sb-nums { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 900; color: var(--a); letter-spacing: 2px; }
+
+.page {
+  max-width: 1360px; margin: 0 auto; height: 100%; overflow: auto;
+  padding: 8px; display: grid; grid-template-columns: 1fr 1.25fr; gap: 14px;
+}
+h4 { margin: 0 0 8px; color: var(--c); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+
+.slot {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(6, 10, 18, 0.85); border: 1px solid #18253a; border-left: 3px solid var(--c);
+  padding: 6px 10px; border-radius: 8px; margin-bottom: 6px; cursor: pointer; transition: 0.15s;
+}
+.slot.e { border-left-color: var(--r); }
+.slot:hover { border-color: var(--g); background: rgba(14, 25, 45, 0.95); transform: translateX(3px); }
+.slot.x { opacity: 0.35; cursor: default; padding: 9px 10px; }
+.slot img.av {
+  width: 38px; height: 38px; border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--c); background: #04070d; flex-shrink: 0;
+}
+.slot.e img.av { border-color: var(--r); }
+.tag { border: 1px solid var(--c); color: var(--c); padding: 2px 7px; border-radius: 4px; font-weight: 800; font-size: 10.5px; }
+
+.hero {
+  position: relative; height: 195px; border-radius: 12px; overflow: hidden;
+  margin-bottom: 10px; border: 1px solid var(--rc, #00f0ff);
+  background: radial-gradient(circle at 75% 35%, color-mix(in srgb, var(--rc, #00f0ff) 42%, transparent), #05080f 72%);
+}
+.hero .pt {
+  position: absolute; right: 2%; bottom: 0; height: 112%; max-width: 56%;
+  object-fit: contain; transition: transform 0.15s;
+  filter: drop-shadow(0 0 22px var(--rc, #00f0ff)); pointer-events: none;
+}
+.hero.w { height: 155px; }
+.hero.w .pt { height: 78%; right: 4%; bottom: 10%; max-width: 62%; }
+.hero .hi { position: absolute; left: 14px; top: 12px; max-width: 54%; z-index: 2; }
+.hero h2 { margin: 0 0 4px; font-size: 25px; letter-spacing: 2px; color: #fff; text-shadow: 0 0 16px var(--rc, #00f0ff); }
+.hero p { font-size: 12px; color: #cbd5e1; margin: 6px 0 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+.st { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
+.st div { background: rgba(6, 10, 17, 0.85); border: 1px solid #18253a; border-radius: 6px; padding: 6px; text-align: center; }
+.st i { display: block; font-style: normal; font-size: 9.5px; color: #94a3b8; text-transform: uppercase; }
+.st b { font-size: 15px; color: var(--a); }
+
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th { text-align: left; color: var(--c); font-size: 10.5px; padding: 4px; border-bottom: 1px solid #1e293b; }
+td { padding: 6px 4px; border-bottom: 1px solid #111827; vertical-align: middle; }
+tr.k { cursor: pointer; transition: 0.12s; }
+tr.k:hover { background: #12203a; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(98px, 1fr)); gap: 7px; max-height: 58vh; overflow: auto; }
+.tile {
+  background: #0d1524; border: 1px solid #1e2d45; border-radius: 8px;
+  overflow: hidden; cursor: pointer; text-align: center; transition: 0.15s; position: relative;
+}
+.tile:hover, .tile.on { transform: translateY(-3px); border-color: var(--c); box-shadow: 0 0 14px rgba(0,240,255,0.4); }
+.tile img { width: 100%; height: 92px; object-fit: cover; display: block; }
+.tile u { display: block; text-decoration: none; background: #ece8e1; color: #0f1923; font-weight: 900; font-size: 11px; padding: 3px; text-transform: uppercase; }
+
+.map-thumb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 8px; margin-top: 6px; }
+.map-thumb {
+  height: 70px; border-radius: 8px; overflow: hidden; position: relative;
+  border: 1px solid #1e3558; cursor: pointer; transition: 0.16s;
+}
+.map-thumb:hover { border-color: var(--c); transform: translateY(-2px); box-shadow: 0 0 14px rgba(0,240,255,0.35); }
+.map-thumb img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.8); }
+.map-thumb span {
+  position: absolute; inset: auto 0 0 0; padding: 4px 8px;
+  background: linear-gradient(transparent, rgba(4,6,11,0.95));
+  font: 800 11px 'Orbitron', sans-serif; color: #fff; letter-spacing: 1px;
+}
+
+.wc { padding: 8px 10px; text-align: left; border-left: 3px solid var(--ac, #00f0ff); display: flex; flex-direction: column; justify-content: space-between; min-height: 98px; }
+.wc img { width: 100%; height: 44px; object-fit: contain; margin: 4px 0; filter: drop-shadow(0 2px 8px rgba(0,240,255,0.2)); }
+.hit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 8px; margin: 8px 0 12px; }
+.hit-card { background: rgba(6, 10, 18, 0.9); border: 1px solid #1a2c47; border-radius: 8px; padding: 10px; }
+
+.face-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(9, 16, 29, 0.9); border: 1px solid #1e3558;
+  padding: 5px 10px 5px 5px; border-radius: 99px; cursor: pointer; transition: 0.15s;
+}
+.face-pill:hover { border-color: var(--c); background: #13233f; transform: translateY(-2px); }
+.face-pill img { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--c); object-fit: cover; }
+
+.bar { display: flex; height: 7px; border-radius: 4px; overflow: hidden; background: #111827; margin: 3px 0 7px; }
+.bar i { display: block; }
+
+#tick {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 35;
+  padding: 5px 16px; font: 11px Consolas, monospace; color: #38bdf8;
+  background: rgba(4,6,11,0.9); border-top: 1px solid #162235;
+}
+#info {
+  position: fixed; left: 50%; bottom: 38px; transform: translateX(-50%);
+  z-index: 25; padding: 7px 14px; font-size: 12.5px; color: var(--c);
+  max-width: 70vw; text-align: center; display: none;
+}
+
+/* FALKOR AI DRAWER */
+#dr {
+  position: fixed; top: 96px; right: -440px; width: 410px; bottom: 30px;
+  z-index: 45; transition: right 0.3s; display: flex; flex-direction: column;
+  padding: 12px; border-color: var(--g);
+}
+#dr.on { right: 12px; }
+.sugg-box { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; padding-bottom: 6px; border-bottom: 1px solid #162235; }
+.sugg-chip {
+  background: #0e1b30; color: var(--c); border: 1px solid #1e385c;
+  padding: 4px 8px; border-radius: 99px; font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: 0.14s;
+}
+.sugg-chip:hover { background: var(--c); color: #000; }
+#feed { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 7px; margin: 8px 0; }
+.m { padding: 8px 10px; border-radius: 7px; line-height: 1.48; white-space: pre-wrap; font-size: 12.5px; }
+.m.u { background: #162235; align-self: flex-end; color: #fff; }
+.m.b { background: #091824; color: var(--g); border-left: 3px solid var(--g); }
+input { background: rgba(4,7,13,0.85); color: #fff; border: 1px solid #263854; padding: 7px 10px; border-radius: 6px; font: 600 12.5px inherit; }
+body.blur .pid { filter: blur(6px); }
+
+@media (max-width: 1020px) {
+  #lob, #ins { position: static !important; width: auto !important; margin-bottom: 8px; }
+  #v_GRAPH { overflow: auto; pointer-events: auto; }
+  .page { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<!-- 3D PROJECTED HOLOGRAPHIC HTML NODES (IMAGES & C/Q/E/X VIDEOS — ZERO CIRCLES!) -->
+<div id="nodeLayer"></div>
+
+<!-- CYBER-GRID BOOT SCREEN -->
+<div id="boot" onclick="start()">
+  <h1>VALOGRAPH</h1>
+  <div style="color:#94a3b8;letter-spacing:3px;font-weight:700">FALKORDB 3D GAME GRAPH · LIVE TELEMETRY · SYNTH AUDIO</div>
+  <pre id="bl">▸ initializing FalkorDB 3D WebGL engine…
+</pre>
+  <button class="enter-btn">▶ ENTER VALOGRAPH</button>
+</div>
+
+<!-- TOP HEADER -->
+<header>
+  <div class="row">
+    <div class="brand" onclick="go('MENU')">VALOGRAPH</div>
+    <span id="fb" class="badge">…</span>
+  </div>
+  <div class="row">
+    <button class="btn" id="bs" onclick="mute()">🔊 Sound</button>
+    <button class="btn" onclick="blurIds()">🙈 Hide IDs</button>
+    <button class="btn g" onclick="drawer()">🤖 Ask Falkor</button>
+  </div>
+</header>
+
+<!-- TOP NAVIGATION DOCK -->
+<nav>
+  <div class="dock">
+    <button class="dock-btn" id="t_MENU" onclick="go('MENU')">💠 MENU</button>
+    <button class="dock-btn on" id="t_GRAPH" onclick="go('GRAPH')">🕸️ 3D GRAPH</button>
+    <button class="dock-btn" id="t_AGENTS" onclick="go('AGENTS')">🎭 AGENTS</button>
+    <button class="dock-btn" id="t_WEAPONS" onclick="go('WEAPONS')">🔫 WEAPONS</button>
+    <button class="dock-btn" id="t_MAPS" onclick="go('MAPS')">🗺️ MAPS</button>
+  </div>
+</nav>
+
+<!-- VIEW 0: MENU -->
+<div class="view" id="v_MENU">
+  <div class="menu-wrap">
+    <div class="pgrid" id="menuPortals"></div>
+  </div>
+</div>
+
+<!-- VIEW 1: LIVE 3D GRAPH -->
+<div class="view on" id="v_GRAPH">
+  <div class="glass" id="lob"></div>
+  <div class="glass" id="ins"></div>
+</div>
+
+<!-- VIEW 2: AGENTS -->
+<div class="view" id="v_AGENTS">
+  <div class="page">
+    <div class="glass" style="padding:12px">
+      <div class="row" id="arole" style="margin-bottom:7px"></div>
+      <input id="asearch" placeholder="Search agent…" style="width:100%;margin-bottom:8px" oninput="agents()">
+      <div class="grid" id="ag"></div>
+    </div>
+    <div class="glass" style="padding:12px;overflow:auto" id="agd"></div>
+  </div>
+</div>
+
+<!-- VIEW 3: WEAPONS -->
+<div class="view" id="v_WEAPONS">
+  <div class="page">
+    <div class="glass" style="padding:12px">
+      <div class="row" id="wcat" style="margin-bottom:8px"></div>
+      <div class="grid" id="wg" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))"></div>
+    </div>
+    <div class="glass" style="padding:12px;overflow:auto" id="wd"></div>
+  </div>
+</div>
+
+<!-- VIEW 4: MAPS -->
+<div class="view" id="v_MAPS">
+  <div class="page">
+    <div class="glass" style="padding:14px;grid-column:1/-1;overflow:auto">
+      <div class="map-thumb-grid" id="mb" style="margin-bottom:14px"></div>
+      <div id="md" style="display:grid;grid-template-columns:1.05fr 1.2fr;gap:16px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="glass" id="info"></div>
+
+<!-- FALKOR AI DRAWER -->
+<div id="dr" class="glass">
+  <div class="row" style="justify-content:space-between">
+    <b style="color:var(--g);font-family:Orbitron;font-size:12.5px">🤖 FALKOR // AI GRAPH COACH</b>
+    <button class="btn" onclick="drawer()">✕</button>
+  </div>
+  <div class="sugg-box">
+    <span class="sugg-chip" onclick="quickAsk('What should Sage do and what is her best map?')">⚡ Sage Guide & Best Map</span>
+    <span class="sugg-chip" onclick="quickAsk('Compare Vandal vs Phantom damage and fire rate')">🔫 Vandal vs Phantom</span>
+    <span class="sugg-chip" onclick="quickAsk('What are the best agents and callouts on Lotus?')">🗺️ Lotus Meta & Callouts</span>
+    <span class="sugg-chip" onclick="quickAsk('Analyze my recent matches and weapon kills')">🛡️ Analyze My Matches</span>
+  </div>
+  <div id="feed"></div>
+  <div class="row">
+    <input id="q" style="flex:1" placeholder="Ask Falkor anything…" onkeydown="if(event.key==='Enter')ask()">
+    <button class="btn g" onclick="ask()">Ask</button>
+  </div>
+</div>
+
+<div id="tick">Cypher: …</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let DATA = {}, CUR = null, TAB = 'GRAPH', BLUR = false, REDO = null, LASTS = '';
+let AG = 0, AROLE = 'ALL', WT = 'ALL', WS = null, VIDS = [], VIDS_BY_KEY = {};
+const RC = {Duelist: '#ff2a54', Initiator: '#fbbf24', Controller: '#a855f7', Sentinel: '#00ff88'};
+const cc = c => /snip/i.test(c) ? '#a855f7' : /smg/i.test(c) ? '#00ff88' : /shot/i.test(c) ? '#fbbf24' : /rifle/i.test(c) ? '#00f0ff' : /heavy/i.test(c) ? '#ff2a54' : '#94a3b8';
+
+function getAgentObj(name) {
+  if (!name || !DATA.agents) return null;
+  return DATA.agents.find(a => a.name.toLowerCase() === String(name).toLowerCase()) || null;
+}
+function getMapObj(name) {
+  if (!name || !DATA.maps) return null;
+  return DATA.maps.find(m => m.name.toLowerCase() === String(name).toLowerCase()) || null;
+}
+function getWeaponObj(name) {
+  if (!name || !DATA.weapons) return null;
+  return DATA.weapons.find(w => w.name.toLowerCase() === String(name).toLowerCase()) || null;
+}
+
+/* WEBAUDIO SYNTH */
+let AC, MG, muted = false;
+function audio() {
+  if (!AC) {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    MG = AC.createGain(); MG.gain.value = 0.45; MG.connect(AC.destination);
+    const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 340;
+    const g = AC.createGain(); g.gain.value = 0.05; f.connect(g); g.connect(MG);
+    [55, 82.4, 110].forEach(x => { const o = AC.createOscillator(); o.type = 'sawtooth'; o.frequency.value = x; o.connect(f); o.start(); });
+  }
+  if (AC.state === 'suspended') AC.resume();
+}
+function tone(f, d = 0.1, t = 'sine', v = 0.1, sl = 0) {
+  if (!AC) return;
+  const o = AC.createOscillator(), g = AC.createGain(), n = AC.currentTime;
+  o.type = t; o.frequency.setValueAtTime(f, n);
+  if (sl) o.frequency.exponentialRampToValueAtTime(f * sl, n + d);
+  g.gain.setValueAtTime(v, n); g.gain.exponentialRampToValueAtTime(0.0001, n + d);
+  o.connect(g); g.connect(MG); o.start(); o.stop(n + d);
+}
+const sfx = {
+  hover: () => tone(1100, 0.03, 'sine', 0.03),
+  click: () => tone(520, 0.12, 'square', 0.06, 2),
+  tab:   () => tone(340, 0.09, 'triangle', 0.08, 1.7),
+  ok:    () => { tone(660, 0.1); setTimeout(() => tone(990, 0.18), 90); },
+  build: () => tone(240, 0.35, 'triangle', 0.06, 3.5)
+};
+function mute() {
+  muted = !muted;
+  if (MG) MG.gain.value = muted ? 0 : 0.45;
+  $('#bs').textContent = muted ? '🔇 Muted' : '🔊 Sound';
+}
+function start() { audio(); $('#boot').remove(); sfx.ok(); }
+
+/* =====================================================================
+   3D GRAPH ENGINE (3D LINES + 3D-PROJECTED HTML IMAGE & VIDEO NODES!)
+   ===================================================================== */
+const R = new THREE.WebGLRenderer({canvas: $('#c'), antialias: true, alpha: true});
+R.setPixelRatio(Math.min(devicePixelRatio, 2));
+const S = new THREE.Scene(), C = new THREE.PerspectiveCamera(55, 1, 0.1, 600);
+C.position.set(0, 0, 38);
+const G = new THREE.Group(); S.add(G);
+
+function glowTex() {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, '#fff'); g.addColorStop(0.3, '#fff8'); g.addColorStop(1, '#0000');
+  x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+const GT = glowTex();
+
+const st = [];
+for (let i = 0; i < 1600; i++) st.push((Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300);
+const sg = new THREE.BufferGeometry();
+sg.setAttribute('position', new THREE.Float32BufferAttribute(st, 3));
+const stars = new THREE.Points(sg, new THREE.PointsMaterial({size: 0.55, color: 0x6fdcff, transparent: true, opacity: 0.65, blending: THREE.AdditiveBlending, depthWrite: false}));
+S.add(stars);
+
+let mx = 0, my = 0, ZT = 36;
+addEventListener('mousemove', e => { mx = e.clientX / innerWidth - 0.5; my = e.clientY / innerHeight - 0.5; });
+
+let ANCHORS = [], PUL = [];
+function build(N, E) {
+  while (G.children.length) G.remove(G.children[0]);
+  const layer = $('#nodeLayer');
+  layer.innerHTML = '';
+  ANCHORS = []; PUL = [];
+  sfx.build(); C.position.z = 54; ZT = 36;
+
+  const kids = N.length - 1, rad = 11.5 + Math.min(kids, 14) * 0.45, pos = {};
+
+  N.forEach((n, i) => {
+    let p;
+    if (i === 0) p = new THREE.Vector3(0, 0, 0);
+    else {
+      const k = i - 1, y = 1 - (k / Math.max(1, kids - 1)) * 2, rr = Math.sqrt(Math.max(0, 1 - y * y)), th = k * 2.39996;
+      p = new THREE.Vector3(Math.cos(th) * rr * rad, y * rad * 0.72, Math.sin(th) * rr * rad);
+    }
+    pos[n.id] = p;
+    const obj3d = new THREE.Object3D();
+    obj3d.position.copy(p);
+    G.add(obj3d);
+
+    /* Create Native HTML Card for this 3D Node (Images / Videos / Big Scores — Zero Circles!) */
+    const el = document.createElement('div');
+    el.className = 'gnode';
+    const type = n.type || 'agent';
+
+    if (type === 'weapon') {
+      el.classList.add('gn-weapon');
+      el.innerHTML = `
+        ${n.img ? `<img src="${esc(n.img)}">` : ''}
+        <b>${esc(n.label)}</b>
+        ${n.sub ? `<div style="font-size:11px;color:#fff">${esc(n.sub)}</div>` : ''}
+      `;
+    } else if (type === 'map') {
+      el.classList.add('gn-map');
+      el.style.setProperty('--nc', n.color || '#a855f7');
+      el.innerHTML = `
+        ${n.img ? `<img src="${esc(n.img)}">` : '<div style="height:54px;background:#101c30"></div>'}
+        <div class="m-info">
+          <div class="m-name">${esc(n.label)}</div>
+          ${n.score ? `<div class="m-score">${esc(n.score)}</div>` : ''}
+        </div>
+      `;
+    } else if (type === 'skill') {
+      el.classList.add('gn-skill');
+      el.innerHTML = `
+        ${n.video ? `<video src="${esc(n.video)}" autoplay loop muted playsinline></video>` : ''}
+        <div class="s-bar">
+          ${n.img ? `<img src="${esc(n.img)}">` : ''}
+          <span class="s-key">[${esc(n.key || 'Q')}]</span>
+          <span class="s-name">${esc(n.label)}</span>
+        </div>
+      `;
+    } else {
+      el.classList.add('gn-agent');
+      if (i === 0) el.classList.add('root');
+      el.style.setProperty('--nc', n.color || '#00f0ff');
+      const lbl = (n.pid && BLUR) ? 'PLAYER ' + i : n.label;
+      el.innerHTML = `
+        <div class="av-ring">
+          ${n.img ? `<img src="${esc(n.img)}">` : `<div style="height:100%;display:flex;align-items:center;justify-content:center;font-family:Orbitron;font-weight:900;color:${n.color}">${esc(lbl.slice(0,3))}</div>`}
+        </div>
+        <div class="gn-label">${esc(lbl)}</div>
+      `;
+    }
+
+    el.addEventListener('mouseenter', () => {
+      sfx.hover();
+      const inf = $('#info'); inf.style.display = 'block';
+      inf.innerHTML = '🔍 ' + esc(n.info || n.label);
+    });
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      sfx.click();
+      if (n.fn) n.fn();
+    });
+
+    layer.appendChild(el);
+    ANCHORS.push({obj: obj3d, el: el, baseY: p.y, ph: Math.random() * 6.28});
+  });
+
+  E.forEach(([a, b, col]) => {
+    if (!pos[a] || !pos[b]) return;
+    const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([pos[a], pos[b]]), new THREE.LineBasicMaterial({color: col, transparent: true, opacity: 0.65}));
+    G.add(l);
+    const pu = new THREE.Sprite(new THREE.SpriteMaterial({map: GT, color: new THREE.Color(col), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false}));
+    pu.scale.setScalar(1.4); G.add(pu);
+    PUL.push({s: pu, a: pos[a], b: pos[b], t: Math.random(), v: 0.25 + Math.random() * 0.35});
+  });
+  $('#info').style.display = 'none';
+}
+
+let drag = false, lx = 0, ly = 0, rx = 0.12, ry = 0, auto = true;
+const cv = $('#c'), V_PROJ = new THREE.Vector3();
+addEventListener('mousedown', e => { if (e.target !== cv || TAB !== 'GRAPH') return; drag = true; lx = e.clientX; ly = e.clientY; auto = false; });
+addEventListener('mousemove', e => {
+  if (drag) {
+    ry += (e.clientX - lx) * 0.006; rx += (e.clientY - ly) * 0.006;
+    rx = Math.max(-1.1, Math.min(1.1, rx));
+    lx = e.clientX; ly = e.clientY;
+  }
+});
+addEventListener('mouseup', () => { drag = false; setTimeout(() => auto = true, 2500); });
+addEventListener('wheel', e => { if (TAB === 'GRAPH' && e.target === cv) ZT = Math.max(16, Math.min(68, ZT + e.deltaY * 0.03)); }, {passive: true});
+
+function rs() { R.setSize(innerWidth, innerHeight, false); C.aspect = innerWidth / innerHeight; C.updateProjectionMatrix(); }
+addEventListener('resize', rs); rs();
+
+function loop() {
+  const t = performance.now();
+  const showGraph = (TAB === 'GRAPH');
+  G.visible = showGraph;
+  $('#nodeLayer').style.display = showGraph ? 'block' : 'none';
+
+  C.position.z += (ZT - C.position.z) * 0.05;
+  C.position.x += (mx * 5 - C.position.x) * 0.04;
+  C.position.y += (-my * 3.5 - C.position.y) * 0.04;
+  C.lookAt(0, 0, 0);
+
+  if (showGraph) {
+    if (auto) ry += 0.0014;
+    G.rotation.y += (ry - G.rotation.y) * 0.08;
+    G.rotation.x += (rx - G.rotation.x) * 0.08;
+    G.updateMatrixWorld();
+
+    PUL.forEach(p => { p.t = (p.t + p.v * 0.016) % 1; p.s.position.lerpVectors(p.a, p.b, p.t); });
+
+    ANCHORS.forEach(a => {
+      a.obj.position.y = a.baseY + Math.sin(t * 0.0014 + a.ph) * 0.3;
+      V_PROJ.setFromMatrixPosition(a.obj.matrixWorld);
+      V_PROJ.project(C);
+      if (V_PROJ.z > 1) {
+        a.el.style.display = 'none';
+      } else {
+        a.el.style.display = '';
+        const x = (V_PROJ.x * 0.5 + 0.5) * innerWidth;
+        const y = (-(V_PROJ.y * 0.5) + 0.5) * innerHeight;
+        a.el.style.left = x + 'px';
+        a.el.style.top = y + 'px';
+      }
+    });
+  }
+
+  stars.rotation.y += 0.0003;
+  R.render(S, C);
+  requestAnimationFrame(loop);
+}
+loop();
+
+function go(t) {
+  TAB = t; sfx.tab();
+  ['MENU', 'GRAPH', 'AGENTS', 'WEAPONS', 'MAPS'].forEach(k => {
+    $('#v_' + k).classList.toggle('on', k === t);
+    $('#t_' + k).classList.toggle('on', k === t);
+  });
+  $('#info').style.display = 'none';
+}
+function drawer() { $('#dr').classList.toggle('on'); sfx.tab(); }
+function blurIds() { BLUR = !BLUR; document.body.classList.toggle('blur', BLUR); REDO && REDO(); }
+function badge(ok) {
+  const e = $('#fb');
+  e.textContent = ok ? '🟢 FalkorDB Live' : '🔴 FalkorDB Offline';
+  e.style.color = ok ? '#00ff88' : '#ff2a54';
+}
+function cy(q) {
+  const e = $('#tick');
+  e.textContent = 'Cypher: ' + (q || '').replace(/\s+/g, ' ');
+}
+function tilt(e, el) {
+  const p = el.querySelector('.pt'); if (!p) return;
+  if (!e) { p.style.transform = ''; return; }
+  const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+  p.style.transform = `perspective(700px) rotateY(${x * 20}deg) rotateX(${-y * 14}deg) translateZ(30px) scale(1.05)`;
+}
+
+/* =====================================================================
+   MENU PORTAL CARDS
+   ===================================================================== */
+function renderKillerMenu() {
+  const j = getAgentObj('Jett') || (DATA.agents || [])[0] || {};
+  const cl = getAgentObj('Clove') || (DATA.agents || [])[1] || {};
+  const ch = getAgentObj('Chamber') || (DATA.agents || [])[2] || {};
+  const om = getAgentObj('Omen') || (DATA.agents || [])[3] || {};
+
+  const m0 = (DATA.maps || [])[0]?.splash || '';
+  const m1 = (DATA.maps || [])[1]?.splash || '';
+  const m2 = (DATA.maps || [])[4]?.splash || '';
+  const m3 = (DATA.maps || [])[5]?.splash || '';
+
+  const cards = [
+    {tab: 'GRAPH', col: '#00f0ff', badge: 'LIVE SCANNER', kicker: '01 // TELEMETRY', title: '3D MATCH GRAPH', desc: 'Real-time squad, weapons & match constellation', art: j.portrait || j.icon, bg: m0},
+    {tab: 'AGENTS', col: '#00ff88', badge: `${(DATA.agents||[]).length} AGENTS`, kicker: '02 // C-Q-E-X VIDEOS', title: 'AGENTS', desc: 'Live C/Q/E/X video nodes & top map images', art: cl.portrait || cl.icon, bg: m1},
+    {tab: 'WEAPONS', col: '#fbbf24', badge: `${(DATA.weapons||[]).length} WEAPONS`, kicker: '03 // BALLISTICS LAB', title: 'WEAPONS', desc: 'Target hitboxes, TTK speed & agent pairings', art: ch.portrait || ch.icon, bg: m2},
+    {tab: 'MAPS', col: '#ff2a54', badge: `${(DATA.maps||[]).length} MAPS`, kicker: '04 // CALLOUT INTEL', title: 'MAPS', desc: 'Tactical blueprints, win rates & agent face meta', art: om.portrait || om.icon, bg: m3}
+  ];
+
+  $('#menuPortals').innerHTML = cards.map(c => `
+    <div class="pcard" style="--pc:${c.col}" onclick="go('${c.tab}')" onmouseenter="sfx.hover()">
+      ${c.bg ? `<img class="map-bg" src="${esc(c.bg)}">` : ''}
+      <div class="glow-bg"></div>
+      <div class="p-top">
+        <span class="p-badge">${esc(c.badge)}</span>
+        <span style="color:${c.col};font-weight:900">➔</span>
+      </div>
+      ${c.art ? `<img class="bg-art" src="${esc(c.art)}">` : ''}
+      <div class="p-overlay">
+        <span class="kicker">${esc(c.kicker)}</span>
+        <h3>${esc(c.title)}</h3>
+        <p>${esc(c.desc)}</p>
+      </div>
+    </div>`).join('');
+}
+
+/* =====================================================================
+   LIVE LOBBY + BIG SCOREBOARD + PLAYER 3D GRAPH (WITH WEAPON & MAP IMAGES!)
+   ===================================================================== */
+function lobby() {
+  const l = DATA.live || {};
+  const row = (s, i, k) => {
+    if (!s) return `<div class="slot x"><span>${i + 1}) empty slot</span></div>`;
+    const agObj = getAgentObj(s.agent);
+    const avImg = agObj && agObj.icon ? `<img class="av" src="${esc(agObj.icon)}">` : `<div class="av" style="display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--c)">${i + 1}</div>`;
+    const agTag = (s.agent && s.agent !== 'Unselected') ? `<span class="tag" style="${k === 'e' ? 'color:#ff2a54;border-color:#ff2a54' : ''}">${esc(s.agent)}</span>` : '';
+    return `
+      <div class="slot ${k}" onclick="showPlayer(DATA.live.${k === 'e' ? 'enemy' : 'ally'}_slots[${i}])" onmouseenter="sfx.hover()">
+        ${avImg}
+        <div style="flex:1;min-width:0">
+          <b class="pid" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px">${esc(s.name)}</b>
+          <div style="font-size:11.5px;color:${k === 'e' ? '#ff2a54' : '#00f0ff'}">Lv.${esc(s.level)} · ${esc(s.rank)} ${s.acs !== null ? '· ' + s.acs + ' ACS' : ''}</div>
+        </div>
+        ${agTag}
+      </div>`;
+  };
+
+  $('#lob').innerHTML = `
+    <h4>🛡 Live Squad <span style="float:right;color:var(--g);font-size:10px">● AUTO-LIVE</span></h4>
+    <div class="live-score-banner">
+      <div>
+        <div class="sb-phase">${esc(l.phase)}</div>
+        <div class="sb-map">🗺️ ${esc(l.map_name || 'LOTUS')}</div>
+      </div>
+      <div class="sb-nums">${l.score_ally} : ${l.score_enemy}</div>
+    </div>
+    ${(l.ally_slots || []).map((s, i) => row(s, i, 'a')).join('')}
+    <h4 style="margin-top:12px">⚔ Opponents</h4>
+    ${(l.enemy_slots || []).map((s, i) => row(s, i, 'e')).join('')}
+    <button class="btn g" style="width:100%;margin-top:8px" onclick="teamComboGraph()">⚡ 3D Team Combo</button>`;
+
+  const firstReal = (l.ally_slots || []).find(x => x);
+  if (!CUR && firstReal) {
+    showPlayer(firstReal);
+  } else if (!CUR && !firstReal && (DATA.agents || []).length > 0) {
+    agentGraph(0, true);
+  }
+}
+
+function teamComboGraph() {
+  go('GRAPH'); REDO = teamComboGraph;
+  const l = DATA.live || {};
+  const mObj = getMapObj(l.map_name) || (DATA.maps || [])[0];
+  const N = [{
+    id: 'hub', type: 'map', label: `${l.map_name || 'Lotus'}`,
+    score: `${l.score_ally} : ${l.score_enemy}`,
+    color: '#a855f7', img: mObj?.splash || mObj?.minimap || '', info: `${l.phase}`
+  }], E = [];
+
+  (l.ally_slots || []).filter(Boolean).forEach((p, i) => {
+    const ag = getAgentObj(p.agent);
+    N.push({id: 'a' + i, type: 'agent', label: `${p.name} (${p.agent})`, color: '#00f0ff', pid: true, img: ag?.icon || '', info: `${p.riot_id} · ${p.agent}`, fn: () => showPlayer(p)});
+    E.push(['hub', 'a' + i, '#00f0ff']);
+  });
+  (l.enemy_slots || []).filter(Boolean).forEach((p, i) => {
+    const ag = getAgentObj(p.agent);
+    N.push({id: 'e' + i, type: 'agent', label: `${p.name} (${p.agent})`, color: '#ff2a54', pid: true, img: ag?.icon || '', info: `${p.riot_id} · ${p.agent}`, fn: () => showPlayer(p)});
+    E.push(['hub', 'e' + i, '#ff2a54']);
+  });
+  build(N, E);
+}
+
+function showPlayer(p) {
+  if (!p) return; CUR = p; REDO = () => showPlayer(p); go('GRAPH');
+  const agObj = getAgentObj(p.agent);
+  const roleCol = agObj ? (RC[agObj.role] || '#00f0ff') : '#00f0ff';
+
+  const N = [{
+    id: 'r', type: 'agent', label: `${p.name} (Lv.${p.level})`, color: '#00f0ff', pid: true,
+    img: agObj?.portrait || agObj?.icon || '',
+    info: `${p.riot_id} · ${p.rank} · ${p.kda_totals}`
+  }], E = [];
+
+  if (agObj) {
+    N.push({
+      id: 'a', type: 'agent', label: agObj.name, color: '#00ff88',
+      img: agObj.icon || '',
+      info: `${agObj.name} [${agObj.role}]`,
+      fn: () => { go('AGENTS'); pickAg(DATA.agents.findIndex(a => a.name === agObj.name)); }
+    });
+    E.push(['r', 'a', '#00ff88']);
+  }
+
+  /* WEAPON NODES SHOW ACTUAL WEAPON GUN IMAGES! */
+  (p.top_weapons || []).forEach((w, i) => {
+    const wObj = getWeaponObj(w.gun);
+    N.push({
+      id: 'w' + i, type: 'weapon', label: `${w.gun}`, sub: `${w.kills} KILLS`, color: '#fbbf24',
+      img: wObj?.icon || '',
+      info: `${w.gun}: ${w.kills} kills`,
+      fn: () => { go('WEAPONS'); pickW(w.gun); }
+    });
+    E.push(['r', 'w' + i, '#ca8a04']);
+  });
+
+  /* MATCH NODES SHOW ACTUAL MAP SPLASH IMAGES + BIG MATCH SCORE! */
+  (p.recent_matches || []).forEach((m, i) => {
+    const c = m.result === 'WIN' ? '#00ff88' : '#ff2a54';
+    const mObj = getMapObj(m.map);
+    N.push({
+      id: 'm' + i, type: 'map', label: `${m.map} (${m.result})`,
+      score: `${m.kda} · ${m.acs} ACS`,
+      color: c,
+      img: mObj?.splash || mObj?.minimap || '',
+      info: `${m.map} (${m.agent}) ${m.kda} · ${m.acs} ACS [${m.result}]`,
+      fn: () => match(m.match_id, p.puuid)
+    });
+    E.push(['r', 'm' + i, c]);
+  });
+  build(N, E);
+
+  const rows = (p.recent_matches || []).map(m => {
+    const mObj = getMapObj(m.map);
+    const mAg = getAgentObj(m.agent);
+    return `
+      <tr class="k" onclick="match('${esc(m.match_id)}','${esc(p.puuid || '')}')">
+        <td>
+          <div style="display:flex;align-items:center;gap:7px">
+            ${mObj?.splash ? `<img src="${esc(mObj.splash)}" style="width:38px;height:24px;object-fit:cover;border-radius:4px">` : ''}
+            <b>${esc(m.map)}</b>
+          </div>
+        </td>
+        <td>
+          <div style="display:flex;align-items:center;gap:5px">
+            ${mAg?.icon ? `<img src="${esc(mAg.icon)}" style="width:22px;height:22px;border-radius:50%">` : ''}
+            <span style="color:#00f0ff">${esc(m.agent)}</span>
+          </div>
+        </td>
+        <td style="font-weight:800;font-size:13.5px;color:#fff">${esc(m.kda)}</td>
+        <td><b style="color:var(--a);font-size:14px">${m.acs}</b></td>
+        <td style="color:${m.result === 'WIN' ? '#00ff88' : '#ff2a54'};font-weight:900">${m.result}</td>
+      </tr>`;
+  }).join('');
+
+  const v = x => x !== null && x !== undefined ? x : '-';
+  $('#ins').innerHTML = `
+    <div class="hero" style="--rc:${roleCol};height:165px" onmousemove="tilt(event,this)" onmouseleave="tilt(0,this)">
+      ${(agObj?.portrait || agObj?.icon) ? `<img class="pt" src="${esc(agObj.portrait || agObj.icon)}">` : ''}
+      <div class="hi">
+        <h2 class="pid" style="font-size:23px">${esc(p.name)}</h2>
+        <span class="tag" style="color:${roleCol};border-color:${roleCol}">${esc(p.rank)} · Lv.${esc(p.level)}</span>
+        ${agObj ? `<p style="color:#fff;font-weight:700;margin-top:6px">${esc(agObj.name)} [${esc(agObj.role)}]</p>` : ''}
+      </div>
+    </div>
+    <div class="st">
+      <div><i>ACS</i><b>${v(p.acs)}</b></div>
+      <div><i>K/D</i><b>${v(p.kd)}</b></div>
+      <div><i>HS%</i><b>${p.hs != null ? p.hs + '%' : '-'}</b></div>
+      <div><i>Win%</i><b>${p.win_rate != null ? p.win_rate + '%' : '-'}</b></div>
+    </div>
+    ${rows ? `<h4>Recent Matches (Click Row for 10-Player Graph)</h4><table><tr><th>Map</th><th>Agent</th><th>K/D/A</th><th>ACS</th><th></th></tr>${rows}</table>` : ''}`;
+}
+
+async function match(id, pu) {
+  if (!id) return;
+  const d = await (await fetch(`/api/match/${encodeURIComponent(id)}?puuid=${encodeURIComponent(pu || '')}`)).json(), m = d.match;
+  if (!m || m.error) return;
+  cy(d.last_cypher); REDO = () => match(id, pu);
+  const mObj = getMapObj(m.map);
+  const N = [{
+    id: 'h', type: 'map', label: m.map, score: m.score,
+    color: '#a855f7', img: mObj?.splash || '', info: `${m.map} · ${m.score}`
+  }], E = [];
+
+  m.players.forEach((pl, i) => {
+    const c = pl.team === 'Blue' ? '#00f0ff' : '#ff2a54';
+    const ag = getAgentObj(pl.agent);
+    N.push({
+      id: 'p' + i, type: 'agent', label: `${pl.name} (${pl.kda})`, color: c, pid: true,
+      img: ag?.icon || '',
+      info: `${pl.riot_id} · ${pl.agent} · ${pl.kda} · ${pl.acs} ACS`
+    });
+    E.push(['h', 'p' + i, c]);
+  });
+  build(N, E);
+  $('#ins').innerHTML = `
+    <div class="live-score-banner">
+      <div class="sb-map">🗺️ ${esc(m.map)}</div>
+      <div class="sb-nums">${esc(m.score)}</div>
+    </div>
+    <button class="btn" style="margin-bottom:8px" onclick="showPlayer(CUR)">⬅ Back to Player</button>
+    <table>
+      <tr><th>Player</th><th>Agent</th><th>K/D/A</th><th>ACS</th></tr>
+      ${m.players.map(p => {
+        const ag = getAgentObj(p.agent);
+        return `<tr>
+          <td class="pid" style="color:${p.team === 'Blue' ? '#00f0ff' : '#ff2a54'};font-weight:700">${esc(p.name)}</td>
+          <td><div style="display:flex;align-items:center;gap:5px">${ag?.icon ? `<img src="${esc(ag.icon)}" style="width:22px;height:22px;border-radius:50%">` : ''}${esc(p.agent)}</div></td>
+          <td style="font-weight:800">${esc(p.kda)}</td>
+          <td><b style="color:var(--a)">${p.acs}</b></td>
+        </tr>`;
+      }).join('')}
+    </table>`;
+}
+
+async function scan(f) {
+  try {
+    const d = await (await fetch('/api/scan?force=' + f, {method: 'POST'})).json(), s = JSON.stringify(d.live);
+    if (s !== LASTS || f) { LASTS = s; DATA.live = d.live; lobby(); }
+    badge(d.falkor_connected); cy(d.last_cypher);
+  } catch (e) {}
+}
+
+/* =====================================================================
+   AGENTS VIEW + 3D AGENT GRAPH WITH LIVE C/Q/E/X VIDEO NODES & MAP IMAGES!
+   ===================================================================== */
+function agents() {
+  const roles = ['ALL', 'Duelist', 'Initiator', 'Controller', 'Sentinel'];
+  $('#arole').innerHTML = roles.map(r => `<button class="btn ${r === AROLE ? 'on' : ''}" style="padding:2px 8px;font-size:11px" onclick="AROLE='${r}';agents()">${r}</button>`).join('');
+  const q = ($('#asearch')?.value || '').toLowerCase();
+
+  $('#ag').innerHTML = (DATA.agents || []).map((a, i) => {
+    if (AROLE !== 'ALL' && a.role !== AROLE) return '';
+    if (q && !a.name.toLowerCase().includes(q)) return '';
+    return `<div class="tile ${i === AG ? 'on' : ''}" data-idx="${i}" onclick="pickAg(${i})" onmouseenter="sfx.hover()">
+      ${a.icon ? `<img src="${esc(a.icon)}">` : '<div style="height:92px"></div>'}
+      <u>${esc(a.name)}</u>
+    </div>`;
+  }).join('');
+  if (VIDS.length === 0) pickAg(AG, 0);
+}
+
+async function pickAg(i, k = 0) {
+  if (i < 0) i = 0;
+  const a = DATA.agents[i]; if (!a) return;
+  if (AG !== i && k === 0) sfx.tab();
+  if (AG !== i || (!VIDS.length && !Object.keys(VIDS_BY_KEY).length)) {
+    AG = i; VIDS = []; VIDS_BY_KEY = {};
+    try {
+      const r = await (await fetch('/api/agent_videos/' + encodeURIComponent(a.name))).json();
+      VIDS = r.videos || [];
+      VIDS_BY_KEY = r.by_key || {};
+    } catch (e) {}
+  }
+  document.querySelectorAll('#ag .tile').forEach(e => e.classList.toggle('on', Number(e.dataset.idx) === i));
+  const sk = a.skills || [], s = sk[k] || {key: 'C', name: '', desc: ''};
+  const roleCol = RC[a.role] || '#00f0ff';
+  const vid = s.video || VIDS_BY_KEY[s.key] || VIDS[k] || VIDS[0] || '';
+
+  const mapCardsHtml = (a.best_maps || []).map(mName => {
+    const mObj = getMapObj(mName);
+    return `
+      <div class="map-thumb" onclick="go('MAPS');pickMap('${esc(mName)}')" onmouseenter="sfx.hover()">
+        ${mObj?.splash ? `<img src="${esc(mObj.splash)}">` : `<div style="height:100%;background:#101c30"></div>`}
+        <span>${esc(mName)}</span>
+      </div>`;
+  }).join('');
+
+  $('#agd').innerHTML = `
+    <div class="hero" style="--rc:${roleCol};height:180px" onmousemove="tilt(event,this)" onmouseleave="tilt(0,this)">
+      ${(a.portrait || a.icon) ? `<img class="pt" src="${esc(a.portrait || a.icon)}">` : ''}
+      <div class="hi">
+        <h2>${esc(a.name.toUpperCase())}</h2>
+        <span class="tag" style="color:${roleCol};border-color:${roleCol}">${esc(a.role)} · ${esc(a.playstyle)}</span>
+        <p>${esc(a.desc)}</p>
+      </div>
+    </div>
+
+    <div class="row" style="margin-bottom:8px">
+      <button class="btn g" style="flex:1" onclick="agentGraph(${i})">🕸️ Open ${esc(a.name)} Video Graph in 3D</button>
+      <button class="btn" onclick="quickAsk('How do I play ${esc(a.name)} and what is her best map?')">🤖 Ask Falkor</button>
+    </div>
+
+    <div class="row" style="margin:8px 0">
+      ${sk.map((x, j) => `
+        <div class="tile ${j === k ? 'on' : ''}" style="flex:1;padding:7px" onclick="pickAg(${i},${j})">
+          ${x.icon ? `<img src="${esc(x.icon)}" style="height:26px;object-fit:contain">` : ''}
+          <div style="color:#fbbf24;font-weight:900;font-size:13px">${esc(x.key)}</div>
+          <div style="font-size:10.5px">${esc(x.name)}</div>
+        </div>`).join('')}
+    </div>
+
+    <div style="border-radius:10px;overflow:hidden;border:1.5px solid ${roleCol};background:#050811;margin-bottom:8px">
+      ${vid ? `<video key="${esc(vid)}" src="${esc(vid)}" autoplay loop muted playsinline controls style="width:100%;height:220px;object-fit:cover;display:block"></video>` : ''}
+    </div>
+
+    <div style="border-left:3px solid ${roleCol};background:#070b12cc;padding:9px;border-radius:6px;margin-bottom:10px">
+      <b>[${esc(s.key)}] ${esc(s.name)}</b> <span style="float:right;color:#fbbf24;font-weight:800">${esc(s.cost || '')}</span>
+      <div style="margin-top:4px;color:#cbd5e1">${esc(s.desc)}</div>
+    </div>
+
+    <h4>🗺️ Best Maps for ${esc(a.name)}</h4>
+    <div class="map-thumb-grid">${mapCardsHtml}</div>`;
+}
+
+/* AGENT 3D GRAPH: PLAYS LIVE C/Q/E/X VIDEOS RIGHT ON THE 4 SKILL NODES + SHOWS MAP IMAGES! */
+async function agentGraph(idx, stayQuiet = false) {
+  const a = DATA.agents[idx]; if (!a) return;
+  if (!stayQuiet) go('GRAPH');
+  REDO = () => agentGraph(idx, true);
+
+  let vByKey = {};
+  try {
+    const r = await (await fetch('/api/agent_videos/' + encodeURIComponent(a.name))).json();
+    vByKey = r.by_key || {};
+  } catch (e) {}
+
+  const col = RC[a.role] || '#00f0ff';
+  const N = [{id: 'ar', type: 'agent', label: `${a.name} [${a.role}]`, color: col, img: a.portrait || a.icon || '', info: `${a.name} [${a.role}]`}], E = [];
+
+  (a.skills || []).forEach((s, i) => {
+    const vUrl = s.video || vByKey[s.key] || '';
+    N.push({
+      id: 'sk' + i, type: 'skill', key: s.key, label: s.name,
+      video: vUrl, img: s.icon || '', color: '#00f0ff',
+      info: `[${s.key}] ${s.name}: ${s.desc}`,
+      fn: () => { go('AGENTS'); pickAg(idx, i); }
+    });
+    E.push(['ar', 'sk' + i, '#00f0ff']);
+  });
+
+  (a.best_maps || []).forEach((mName, i) => {
+    const mObj = getMapObj(mName);
+    N.push({
+      id: 'bm' + i, type: 'map', label: mName, score: 'BEST MAP',
+      color: '#00ff88', img: mObj?.splash || mObj?.minimap || '',
+      info: `Best Map: ${mName}`,
+      fn: () => { go('MAPS'); pickMap(mName); }
+    });
+    E.push(['ar', 'bm' + i, '#00ff88']);
+  });
+  build(N, E);
+
+  $('#ins').innerHTML = `
+    <div class="hero" style="--rc:${col};height:175px" onmousemove="tilt(event,this)" onmouseleave="tilt(0,this)">
+      ${(a.portrait || a.icon) ? `<img class="pt" src="${esc(a.portrait || a.icon)}">` : ''}
+      <div class="hi">
+        <h2>${esc(a.name.toUpperCase())}</h2>
+        <span class="tag" style="color:${col};border-color:${col}">${esc(a.role)}</span>
+        <p>${esc(a.desc)}</p>
+      </div>
+    </div>
+    <button class="btn g" style="width:100%" onclick="go('AGENTS');pickAg(${idx})">🎬 Open Full Agent View</button>`;
+}
+
+/* =====================================================================
+   WEAPONS LAB + 3D WEAPON GRAPH (WITH GUN IMAGES & AGENT FACES!)
+   ===================================================================== */
+function weapons() {
+  const w = DATA.weapons || [], cats = ['ALL', ...new Set(w.map(x => x.cat))];
+  $('#wcat').innerHTML = cats.map(c => `<button class="btn ${c === WT ? 'on' : ''}" style="padding:2px 8px" onclick="WT='${esc(c)}';weapons()">${esc(c)}</button>`).join('');
+  $('#wg').innerHTML = w.filter(x => WT === 'ALL' || x.cat === WT).map(x => `
+    <div class="tile wc ${WS && WS.name === x.name ? 'on' : ''}" style="--ac:${cc(x.cat)}" onclick="pickW('${esc(x.name)}')" onmouseenter="sfx.hover()">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <b style="color:#fff;font-size:13px">${esc(x.name)}</b>
+        <span style="color:#fbbf24;font-weight:800;font-size:11.5px">${x.cost} Cr</span>
+      </div>
+      ${x.icon ? `<img src="${esc(x.icon)}">` : ''}
+      <div style="font-size:10.5px;color:#94a3b8">${esc(x.cat)} · ${x.fr} rds/s · ${esc(x.pen)} Pen</div>
+    </div>`).join('');
+  if (!WS && w.length) pickW(w[0].name, 1);
+}
+
+function getBestAgentsForWeapon(w) {
+  if (/snip/i.test(w.cat)) return ['Jett', 'Chamber', 'Waylay', 'Sova'];
+  if (/heavy/i.test(w.cat)) return ['Sova', 'Cypher', 'Fade', 'Brimstone'];
+  if (/shot/i.test(w.cat)) return ['Raze', 'Neon', 'Omen', 'Jett'];
+  if (/smg/i.test(w.cat)) return ['Clove', 'Neon', 'Killjoy', 'Skye'];
+  return ['Reyna', 'Jett', 'Sage', 'Clove', 'Chamber'];
+}
+
+function pickW(n, q) {
+  const w = getWeaponObj(n);
+  if (!w) return; WS = w; if (!q) sfx.click();
+  document.querySelectorAll('#wg .wc').forEach(e => e.classList.toggle('on', e.textContent.includes(w.name)));
+
+  const bestAgs = getBestAgentsForWeapon(w);
+
+  $('#wd').innerHTML = `
+    <div class="hero w" style="--rc:${cc(w.cat)}" onmousemove="tilt(event,this)" onmouseleave="tilt(0,this)">
+      ${w.icon ? `<img class="pt" src="${esc(w.icon)}">` : ''}
+      <div class="hi">
+        <h2>${esc(w.name.toUpperCase())}</h2>
+        <span class="tag" style="color:${cc(w.cat)};border-color:${cc(w.cat)}">${esc(w.cat)}</span>
+        <p style="color:#fbbf24;font-weight:900;font-size:16px">${w.cost} Credits</p>
+      </div>
+    </div>
+
+    <div class="st">
+      <div><i>Fire Rate</i><b style="color:var(--c)">${w.fr}/s</b></div>
+      <div><i>Magazine</i><b>${w.mag} Rds</b></div>
+      <div><i>Wall Pen</i><b style="color:var(--g)">${esc(w.pen)}</b></div>
+      <div><i>1-Tap Head</i><b style="color:var(--r)">${(w.ranges?.[0]?.hd || 0) >= 150 ? 'YES (150+)' : (w.ranges?.[0]?.hd || 0) + ' DMG'}</b></div>
+    </div>
+
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn g" style="flex:1" onclick="wGraph()">🕸️ Open ${esc(w.name)} in 3D Graph</button>
+      <button class="btn" onclick="quickAsk('Give me pro tips for using the ${esc(w.name)}')">🤖 Ask Falkor</button>
+    </div>
+
+    <h4>🎯 Target Hitbox Matrix & Time-To-Kill (vs 150 HP Heavy Shields)</h4>
+    <div class="hit-grid">
+      ${(w.ranges || []).map(r => {
+        const hShots = r.hd > 0 ? Math.ceil(150 / r.hd) : 1;
+        const bShots = r.bd > 0 ? Math.ceil(150 / r.bd) : 4;
+        const ttkMs = w.fr > 0 ? Math.round(((bShots - 1) / w.fr) * 1000) : 0;
+        return `
+          <div class="hit-card">
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid #18253a;padding-bottom:4px;margin-bottom:6px">
+              <b style="color:#fff">📏 ${esc(r.range)}</b>
+              <span style="color:var(--g);font-size:11px">Body TTK: ${ttkMs}ms</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+              <span>🎯 <b>Head:</b> <b style="color:var(--r)">${r.hd} DMG</b></span>
+              <span style="color:#94a3b8">${hShots}${hShots === 1 ? 'Shot' : 'Shots'}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+              <span>🛡️ <b>Body:</b> <b style="color:var(--c)">${r.bd} DMG</b></span>
+              <span style="color:#94a3b8">${bShots} Shots</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+              <span>🦵 <b>Legs:</b> <b style="color:var(--a)">${r.ld} DMG</b></span>
+              <span style="color:#94a3b8">${r.ld > 0 ? Math.ceil(150 / r.ld) : '-'} Shots</span>
+            </div>
+            <div class="bar">
+              <i style="width:${Math.min(100, r.hd / 2.6)}%;background:#ff2a54"></i>
+              <i style="width:${Math.min(100, r.bd / 2.6)}%;background:#00f0ff"></i>
+              <i style="width:${Math.min(100, r.ld / 2.6)}%;background:#fbbf24"></i>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>
+
+    <h4>🎭 Best Agents to Pair With ${esc(w.name)}</h4>
+    <div class="row">
+      ${bestAgs.map(agName => {
+        const ag = getAgentObj(agName);
+        return `
+          <div class="face-pill" onclick="go('AGENTS');pickAg(DATA.agents.findIndex(x=>x.name==='${esc(agName)}'))">
+            ${ag?.icon ? `<img src="${esc(ag.icon)}">` : ''}
+            <div>
+              <b style="color:#fff;display:block;font-size:12px">${esc(agName)}</b>
+              <span style="font-size:10px;color:var(--c)">${esc(ag?.role || '')}</span>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function wGraph() {
+  const w = WS; if (!w) return; go('GRAPH'); REDO = wGraph;
+  const N = [{id: 'r', type: 'weapon', label: w.name, sub: `${w.cost} Cr · ${w.fr}/s`, color: '#00f0ff', img: w.icon || '', info: `${w.name} · ${w.cost} Cr`}], E = [];
+  (w.ranges || []).forEach((r, i) => {
+    N.push({id: 'g' + i, type: 'weapon', label: r.range, sub: `${r.hd}H / ${r.bd}B / ${r.ld}L`, color: '#ff2a54', img: w.icon || '', info: `${r.range}: Head ${r.hd}, Body ${r.bd}, Leg ${r.ld}`});
+    E.push(['r', 'g' + i, '#ff2a54']);
+  });
+  getBestAgentsForWeapon(w).forEach((agName, i) => {
+    const ag = getAgentObj(agName);
+    if (ag) {
+      N.push({id: 'wa' + i, type: 'agent', label: ag.name, color: '#00ff88', img: ag.icon || '', info: `Recommended Agent: ${ag.name}`, fn: () => { go('AGENTS'); pickAg(DATA.agents.findIndex(x => x.name === ag.name)); }});
+      E.push(['r', 'wa' + i, '#00ff88']);
+    }
+  });
+  build(N, E);
+  $('#ins').innerHTML = `
+    <div class="hero w" style="--rc:${cc(w.cat)}">
+      ${w.icon ? `<img class="pt" src="${esc(w.icon)}">` : ''}
+      <div class="hi"><h2>${esc(w.name)}</h2><span class="tag">${w.cost} Cr</span></div>
+    </div>
+    <button class="btn" onclick="go('WEAPONS')">⬅ Back to Weapons Lab</button>`;
+}
+
+/* =====================================================================
+   MAPS VIEW (MAP IMAGES + AGENT FACE PORTRAITS)
+   ===================================================================== */
+let CUR_MAP = null;
+function maps() {
+  $('#mb').innerHTML = (DATA.maps || []).map(m => `
+    <div class="map-thumb" onclick="pickMap('${esc(m.name)}')" onmouseenter="sfx.hover()">
+      ${m.splash ? `<img src="${esc(m.splash)}">` : `<div style="height:100%;background:#101c30"></div>`}
+      <span>${esc(m.name)}</span>
+    </div>`).join('');
+  if (DATA.maps && DATA.maps.length) pickMap(DATA.maps[0].name, 1);
+}
+
+function pickMap(n, q) {
+  const m = getMapObj(n); if (!m) return;
+  CUR_MAP = m; if (!q) sfx.click();
+  $('#md').innerHTML = `
+    <div style="text-align:center;background:#060a12cc;border:1px solid #18253a;padding:12px;border-radius:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h3 style="margin:0;font-family:Orbitron;color:#fff">${esc(m.name.toUpperCase())} <small style="color:var(--c)">(${esc(m.sites)})</small></h3>
+        <button class="btn g" onclick="mapGraph()">🕸️ 3D Map Graph</button>
+      </div>
+      ${m.minimap ? `<img src="${esc(m.minimap)}" style="max-width:100%;max-height:290px;border-radius:8px;filter:drop-shadow(0 0 16px #00f0ff33)">` : ''}
+      ${m.splash ? `<img src="${esc(m.splash)}" style="width:100%;height:110px;object-fit:cover;border-radius:8px;margin-top:8px">` : ''}
+    </div>
+    <div>
+      <p style="color:#cbd5e1;font-size:13.5px;margin-top:0">${esc(m.desc)}</p>
+      <div class="st" style="grid-template-columns:1fr 1fr">
+        <div><i>Attacker Win Rate</i><b style="color:#ff2a54">${m.atk_wr}%</b></div>
+        <div><i>Defender Win Rate</i><b style="color:#00f0ff">${m.def_wr}%</b></div>
+      </div>
+      <div class="bar" style="height:9px;margin-bottom:14px">
+        <i style="width:${m.atk_wr}%;background:#ff2a54"></i>
+        <i style="width:${m.def_wr}%;background:#00f0ff"></i>
+      </div>
+      <h4>🏆 Top 5 Meta Agents on ${esc(m.name)} (Click Agent Face)</h4>
+      <div class="row" style="margin-bottom:14px">
+        ${(m.top_agents || []).map(a => {
+          const ag = getAgentObj(a);
+          return `
+            <div class="face-pill" onclick="go('AGENTS');pickAg(DATA.agents.findIndex(x=>x.name==='${esc(a)}'))">
+              ${ag?.icon ? `<img src="${esc(ag.icon)}">` : ''}
+              <div>
+                <b style="color:#fff;display:block;font-size:12.5px">${esc(a)}</b>
+                <span style="font-size:10px;color:var(--g)">${esc(ag?.role || 'Meta')}</span>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+      <h4>📍 All Tactical Callout Zones (${(m.callouts || []).length} Zones)</h4>
+      <div class="row">${(m.callouts || []).map(c => `<span class="tag" style="color:#e2e8f0;border-color:#1e293b;background:#060a12">${esc(c)}</span>`).join('')}</div>
+    </div>`;
+}
+
+function mapGraph() {
+  const m = CUR_MAP; if (!m) return; go('GRAPH'); REDO = mapGraph;
+  const N = [{id: 'mr', type: 'map', label: m.name, score: `${m.atk_wr}% ATK / ${m.def_wr}% DEF`, color: '#a855f7', img: m.splash || m.minimap || '', info: `${m.name} (${m.sites})`}], E = [];
+  (m.top_agents || []).forEach((agName, i) => {
+    const ag = getAgentObj(agName);
+    N.push({
+      id: 'ma' + i, type: 'agent', label: agName, color: '#00ff88',
+      img: ag?.icon || '',
+      info: `Meta Agent: ${agName}`,
+      fn: () => { go('AGENTS'); pickAg(DATA.agents.findIndex(x => x.name === agName)); }
+    });
+    E.push(['mr', 'ma' + i, '#00ff88']);
+  });
+  build(N, E);
+
+  $('#ins').innerHTML = `
+    <h4>${esc(m.name)}</h4>
+    ${m.minimap ? `<img src="${esc(m.minimap)}" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;margin-bottom:8px">` : ''}
+    <button class="btn" style="width:100%" onclick="go('MAPS')">⬅ Back to Map Blueprint</button>`;
+}
+
+/* =====================================================================
+   FALKOR AI CHAT
+   ===================================================================== */
+function formatChatMsg(t) {
+  return esc(t).replace(/\*\*(.+?)\*\*/g, '<b style="color:#fff">$1</b>');
+}
+
+function renderChatFeed(chatList) {
+  const f = $('#feed');
+  f.innerHTML = (chatList || []).map(c =>
+    `<div class="m ${c.sender === 'YOU' ? 'u' : 'b'}"><b>${esc(c.sender)}:</b><br>${formatChatMsg(c.text)}</div>`
+  ).join('');
+  f.scrollTop = 1e9;
+}
+
+async function quickAsk(qText) {
+  if (!$('#dr').classList.contains('on')) $('#dr').classList.add('on');
+  $('#q').value = qText;
+  await ask();
+}
+
+async function ask() {
+  const i = $('#q'), q = i.value.trim(); if (!q) return;
+  i.value = ''; sfx.click();
+  const f = $('#feed');
+  f.insertAdjacentHTML('beforeend', `<div class="m u"><b>YOU:</b><br>${esc(q)}</div><div class="m b" id="th">FALKOR is thinking…</div>`);
+  f.scrollTop = 1e9;
+  const ctx = CUR ? `${CUR.riot_id} (${CUR.agent}, ACS:${CUR.acs})` : (DATA.agents?.[AG]?.name || '');
+  try {
+    const d = await (await fetch('/api/ask_fallkor', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question: q, context_info: ctx})
+    })).json();
+    renderChatFeed(d.chat);
+    if (d.last_cypher) cy(d.last_cypher);
+    sfx.ok();
+  } catch (e) {
+    $('#th').textContent = 'Ensure python app.py is running.';
+  }
+}
+
+(async () => {
+  DATA = await (await fetch('/api/bootstrap')).json();
+  badge(DATA.falkor_connected);
+  cy(DATA.last_cypher);
+  renderKillerMenu();
+  renderChatFeed(DATA.chat);
+  lobby(); agents(); weapons(); maps();
+  setInterval(() => scan(false), 3500);
+
+  const bl = t => { const b = $('#bl'); if (b) b.textContent += t + '\n'; };
+  bl('✔ FalkorDB 3D WebGL graph engine online');
+  bl(DATA.falkor_connected ? '✔ FalkorDB Cloud instance connected' : '▸ Local Graph Active');
+  bl(`✔ ${DATA.agents.length} agents · ${DATA.weapons.length} weapons · ${DATA.maps.length} maps synced`);
+  bl('✔ FALKOR AI Coach ready');
+})();
+</script>
+</body>
+</html>
